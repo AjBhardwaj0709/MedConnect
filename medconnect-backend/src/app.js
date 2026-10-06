@@ -5,7 +5,8 @@ const rateLimit = require("express-rate-limit");
 
 const authRoutes = require("./routes/authRoutes");
 const doctorRoutes=require("./routes/doctorRoutes")
-const patientRoutes=require("./routes/patientsRoutes")
+const patientRoutes=require("./routes/patientsRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 app.use(express.json());
@@ -54,6 +55,9 @@ app.use("/api/doctors", doctorRoutes);
 
 //patient routes
 app.use("/api/patients",patientRoutes)
+
+// admin routes 
+app.use("/api/admin", adminRoutes);
 
 // 404
 app.use((req, res) => {

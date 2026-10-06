@@ -110,7 +110,8 @@ const updateDoctorProfile = async (req, res) => {
 const getAllDoctors = async (req, res) => {
     try {
         const doctors = await Doctor.find({
-            isVerified: true
+            isVerified: true,
+            verificationStatus: "approved",
         }).select(
             "name specialization qualification experience consultationFee bio languages clinicName clinicAddress profileImage"
         ).sort({ createdAt: -1 });
@@ -138,7 +139,8 @@ const getDoctorById = async (req, res) => {
         const { id } = req.params;
         const doctor = await Doctor.findById({
             _id: id,
-            isVerified: true
+            isVerified: true,
+            verificationStatus: "approved",
         }).select("name specialization qualification experience consultationFee bio languages clinicName clinicAddress profileImage");
         if(!doctor){
             return res.status(400).json({

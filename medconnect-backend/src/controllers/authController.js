@@ -192,6 +192,7 @@ const doctorSignup = async (req, res) => {
             registrationNumber,
             consultationFee: consultationFee || 0,
             isVerified: false,
+            verificationStatus: "pending",
         });
 
         // Generate token
