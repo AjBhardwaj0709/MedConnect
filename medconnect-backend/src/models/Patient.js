@@ -20,14 +20,49 @@ const patientSchema = new mongoose.Schema({
         type: String,
         enum: ["male", "female", "other"]
     },
-    address:{
-        type:String,
+    address: {
+        type: String,
         trim: true,
+        default: "",
     },
-    profileimage:{
-        type:String,
+    bloodGroup: {
+        type: String,
+        enum: [
+            "A+",
+            "A-",
+            "B+",
+            "B-",
+            "AB+",
+            "AB-",
+            "O+",
+            "O-",
+            "Unknown",
+        ],
+        default: "Unknown",
+    },
+
+    emergencyContact: {
+        name: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+
+        phone: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+    }, relationship: {
+        type: String,
+        trim: true,
+        default: "",
+    },
+
+    profileimage: {
+        type: String,
     }
 }, {
-    timestamps:true,
+    timestamps: true,
 });
-module.exports=mongoose.model("Patient",patientSchema)
+module.exports = mongoose.model("Patient", patientSchema)

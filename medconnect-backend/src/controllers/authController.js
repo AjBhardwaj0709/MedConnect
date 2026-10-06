@@ -28,8 +28,6 @@ const patientSignup= async (req, res)=>{
             dateOfBirth,
             gender,
             address,
-
-
         }= req.body;
 
 
