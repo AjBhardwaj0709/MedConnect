@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
 const authRoutes = require("./routes/authRoutes");
+const doctorRoutes=require("./routes/doctorRoutes")
 
 const app = express();
 app.use(express.json());
@@ -47,7 +48,8 @@ app.get("/", (req, res) => {
 
 // Auth routes
 app.use("/api/auth", authLimiter, authRoutes);
-
+// doctor routes access 
+app.use("/api/doctors", doctorRoutes);
 
 // 404
 app.use((req, res) => {
@@ -67,6 +69,8 @@ app.use((err, req, res, next) => {
     message: "Internal server error",
   });
 });
+
+
 
 
 module.exports = app;
