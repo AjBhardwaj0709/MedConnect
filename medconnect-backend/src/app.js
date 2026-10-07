@@ -7,7 +7,7 @@ const authRoutes = require("./routes/authRoutes");
 const doctorRoutes=require("./routes/doctorRoutes")
 const patientRoutes=require("./routes/patientsRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-
+const availabilityRoutes = require("./routes/availabilityRoutes");
 const app = express();
 app.use(express.json());
 
@@ -58,6 +58,13 @@ app.use("/api/patients",patientRoutes)
 
 // admin routes 
 app.use("/api/admin", adminRoutes);
+
+// doctor Avalibility routes 
+app.use(
+  "/api/doctors/availability",
+  availabilityRoutes
+);
+
 
 // 404
 app.use((req, res) => {
