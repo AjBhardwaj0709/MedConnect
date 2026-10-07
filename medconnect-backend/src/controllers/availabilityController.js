@@ -3,7 +3,7 @@ const DoctorAvailability= require("../models/DoctorAvailability");
 
 //helper
 
-const getApprovedDoctor= async (req, res)=>{
+const getApprovedDoctor= async (userId)=>{
 return await Doctor.findOne({
     userId,
     isVerified: true,

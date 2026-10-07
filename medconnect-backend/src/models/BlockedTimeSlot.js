@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const doctorAvailabilitySchema = new mongoose.Schema(
+const blockedTimeSlotSchema = new mongoose.Schema(
     {
         doctorId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -8,17 +8,8 @@ const doctorAvailabilitySchema = new mongoose.Schema(
             required: true,
         },
 
-        dayOfWeek: {
-            type: String,
-            enum: [
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "saturday",
-                "sunday",
-            ],
+        date: {
+            type: Date,
             required: true,
         },
 
@@ -34,9 +25,10 @@ const doctorAvailabilitySchema = new mongoose.Schema(
             match: /^([01]\d|2[0-3]):([0-5]\d)$/,
         },
 
-        isAvailable: {
-            type: Boolean,
-            default: true,
+        reason: {
+            type: String,
+            trim: true,
+            default: "",
         },
     },
     {
@@ -45,6 +37,6 @@ const doctorAvailabilitySchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model(
-    "DoctorAvailability",
-    doctorAvailabilitySchema
+    "BlockedTimeSlot",
+    blockedTimeSlotSchema
 );
