@@ -375,8 +375,269 @@ const getDoctorAppointments = async (req, res) => {
     }
 };
 
+
+// --------------------------------------------------
+// RESCHEDULE APPOINTMENT
+// PUT /api/appointments/:id/reschedule
+// --------------------------------------------------
+const rescheduleAppointment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { date, startTime, endTime } = req.body;
+
+        // ---------------------------------------------
+        // 1. Validate required fields
+        // ---------------------------------------------
+        if (!date || !startTime || !endTime) {
+            return res.status(400).json({
+                success: false,
+                message: "date, startTime and endTime are required",
+            });
+        }
+
+        // ---------------------------------------------
+        // 2. Validate time format
+        // ---------------------------------------------
+        const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+        if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+            return res.status(400).json({
+                success: false,
+                message: "Time must be in HH:mm format",
+            });
+        }
+
+        const startMinutes = timeToMinutes(startTime);
+        const endMinutes = timeToMinutes(endTime);
+
+        // ---------------------------------------------
+        // 3. Validate time
+        // ---------------------------------------------
+        if (startMinutes >= endMinutes) {
+            return res.status(400).json({
+                success: false,
+                message: "startTime must be before endTime",
+            });
+        }
+
+        // ---------------------------------------------
+        // 4. Appointment duration must be 30 minutes
+        // ---------------------------------------------
+        if (endMinutes - startMinutes !== 30) {
+            return res.status(400).json({
+                success: false,
+                message: "Appointment duration must be exactly 30 minutes",
+            });
+        }
+
+        // ---------------------------------------------
+        // 5. Normalize date
+        // ---------------------------------------------
+        const normalizedDate = normalizeDate(date);
+
+        if (!normalizedDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid date",
+            });
+        }
+
+        // ---------------------------------------------
+        // 6. Prevent rescheduling to past date
+        // ---------------------------------------------
+        const today = new Date();
+
+        const todayUTC = new Date(
+            Date.UTC(
+                today.getUTCFullYear(),
+                today.getUTCMonth(),
+                today.getUTCDate()
+            )
+        );
+
+        if (normalizedDate < todayUTC) {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot reschedule to a past date",
+            });
+        }
+
+        // ---------------------------------------------
+        // 7. Find appointment
+        // ---------------------------------------------
+        const appointment = await Appointment.findById(id);
+
+        if (!appointment) {
+            return res.status(404).json({
+                success: false,
+                message: "Appointment not found",
+            });
+        }
+
+        // ---------------------------------------------
+        // 8. Only pending/confirmed can be rescheduled
+        // ---------------------------------------------
+        if (
+            appointment.status !== "pending" &&
+            appointment.status !== "confirmed"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Only pending or confirmed appointments can be rescheduled",
+            });
+        }
+
+        // ---------------------------------------------
+        // 9. Patient ownership check
+        // ---------------------------------------------
+        const patient = await Patient.findOne({
+            userId: req.user.userId,
+        });
+
+        if (!patient) {
+            return res.status(404).json({
+                success: false,
+                message: "Patient profile not found",
+            });
+        }
+
+        if (
+            appointment.patientId.toString() !==
+            patient._id.toString()
+        ) {
+            return res.status(403).json({
+                success: false,
+                message:
+                    "You are not authorized to reschedule this appointment",
+            });
+        }
+
+        // ---------------------------------------------
+        // 10. Find approved doctor
+        // ---------------------------------------------
+        const doctor = await Doctor.findOne({
+            _id: appointment.doctorId,
+            isVerified: true,
+            verificationStatus: "approved",
+        });
+
+        if (!doctor) {
+            return res.status(404).json({
+                success: false,
+                message: "Approved doctor not found",
+            });
+        }
+
+        // ---------------------------------------------
+        // 11. Check doctor leave
+        // ---------------------------------------------
+        const leave = await DoctorLeave.findOne({
+            doctorId: doctor._id,
+            startDate: { $lte: normalizedDate },
+            endDate: { $gte: normalizedDate },
+        });
+
+        if (leave) {
+            return res.status(409).json({
+                success: false,
+                message: "Doctor is on leave on the selected date",
+            });
+        }
+
+        // ---------------------------------------------
+        // 12. Check day availability
+        // ---------------------------------------------
+        const dayOfWeek = getDayOfWeek(normalizedDate);
+
+        const availability = await DoctorAvailability.findOne({
+            doctorId: doctor._id,
+            dayOfWeek,
+            isAvailable: true,
+            startTime: { $lte: startTime },
+            endTime: { $gte: endTime },
+        });
+
+        if (!availability) {
+            return res.status(409).json({
+                success: false,
+                message: "Doctor is not available at the selected time",
+            });
+        }
+
+        // ---------------------------------------------
+        // 13. Check blocked time
+        // ---------------------------------------------
+        const blockedSlot = await BlockedTimeSlot.findOne({
+            doctorId: doctor._id,
+            date: normalizedDate,
+            startTime: { $lt: endTime },
+            endTime: { $gt: startTime },
+        });
+
+        if (blockedSlot) {
+            return res.status(409).json({
+                success: false,
+                message: "Selected time is blocked by the doctor",
+            });
+        }
+
+        // ---------------------------------------------
+        // 14. Check another appointment
+        // ---------------------------------------------
+        const existingAppointment = await Appointment.findOne({
+            _id: { $ne: appointment._id },
+            doctorId: doctor._id,
+            date: normalizedDate,
+
+            status: {
+                $in: ["pending", "confirmed"],
+            },
+
+            startTime: { $lt: endTime },
+            endTime: { $gt: startTime },
+        });
+
+        if (existingAppointment) {
+            return res.status(409).json({
+                success: false,
+                message: "The selected time slot is already booked",
+            });
+        }
+
+        // ---------------------------------------------
+        // 15. Update appointment
+        // ---------------------------------------------
+        appointment.date = normalizedDate;
+        appointment.startTime = startTime;
+        appointment.endTime = endTime;
+
+        // Rescheduled appointment goes back to pending
+        appointment.status = "pending";
+
+        await appointment.save();
+
+        // ---------------------------------------------
+        // 16. Response
+        // ---------------------------------------------
+        return res.status(200).json({
+            success: true,
+            message: "Appointment rescheduled successfully",
+            appointment,
+        });
+    } catch (error) {
+        console.error("Reschedule appointment error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+        });
+    }
+};
+
 module.exports = {
     createAppointment,
     getMyAppointments,
     getDoctorAppointments,
+    rescheduleAppointment,
 };

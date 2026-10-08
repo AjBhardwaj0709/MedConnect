@@ -12,6 +12,7 @@ const leaveRoutes = require("./routes/leaveRoutes");
 const blockedTimeSlotRoutes = require("./routes/blockedTimeSlotRoutes");
 const slotRoutes = require("./routes/slotRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
+const medicalReportRoutes = require("./routes/medicalReportRoutes");
 const app = express();
 app.use(express.json());
 
@@ -68,6 +69,12 @@ app.use(
 app.use(
   "/api/doctors/blocked-slots",
   blockedTimeSlotRoutes
+);
+
+// medical report routes
+app.use(
+  "/api/medical-reports",
+  medicalReportRoutes
 );
 
 //appointment routes
