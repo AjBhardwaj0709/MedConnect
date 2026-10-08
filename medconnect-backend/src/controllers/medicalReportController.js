@@ -2,6 +2,7 @@ const MedicalReport = require("../models/MedicalReport");
 const Doctor = require("../models/Doctor");
 const Patient = require("../models/Patient");
 const Appointment = require("../models/Appointment");
+const { createNotification } = require("../services/notificationService");
 
 // ==========================================
 // CREATE MEDICAL REPORT
@@ -101,6 +102,20 @@ const createMedicalReport = async (req, res) => {
             reportType: reportType || "other",
             reportDate: parsedDate,
             fileUrl: fileUrl || "",
+        });
+        // ---------------------------------------------
+        // Notify patient about new medical report
+        // ---------------------------------------------
+        await createNotification({
+            userId: patient.userId,
+            type: "medical_report_created",
+            title: "New Medical Report",
+            message: "Your doctor has added a new medical report.",
+            data: {
+                medicalReportId: report._id,
+                doctorId: doctor._id,
+                appointmentId: appointmentId || null,
+            },
         });
 
         return res.status(201).json({

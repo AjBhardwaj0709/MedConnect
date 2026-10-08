@@ -4,6 +4,8 @@ const {
     createAppointment,
     getMyAppointments,
     getDoctorAppointments,
+    confirmAppointment,
+    cancelAppointment,
     rescheduleAppointment,
 } = require("../controllers/appointmentController");
 
@@ -55,7 +57,19 @@ router.get(
     getDoctorAppointments
 );
 
+// Doctor confirms appointment
+router.put(
+    "/:id/confirm",
+    protect,
+    authorize("doctor"),
+    confirmAppointment
+);
 
-
-
+// Cancel appointment
+router.put(
+    "/:id/cancel",
+    protect,
+    authorize("patient", "doctor"),
+    cancelAppointment
+);
 module.exports = router;

@@ -48,6 +48,10 @@ const appointmentSchema = new mongoose.Schema(
             ],
             default: "pending",
         },
+        reminderSent: {
+            type: Boolean,
+            default: false,
+        },
 
         cancellationReason: {
             type: String,

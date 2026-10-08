@@ -2,6 +2,7 @@ const Prescription = require("../models/Prescription");
 const Doctor = require("../models/Doctor");
 const Patient = require("../models/Patient");
 const Appointment = require("../models/Appointment");
+const { createNotification } = require("../services/notificationService");
 
 // ==========================================
 // CREATE PRESCRIPTION
@@ -121,7 +122,20 @@ const createPrescription = async (req, res) => {
                 : null,
             prescriptionDate: parsedDate,
         });
-
+        // ---------------------------------------------
+        // Notify patient about new prescription
+        // ---------------------------------------------
+        await createNotification({
+            userId: patient.userId,
+            type: "prescription_created",
+            title: "New Prescription",
+            message: "Your doctor has created a new prescription for you.",
+            data: {
+                prescriptionId: prescription._id,
+                doctorId: doctor._id,
+                appointmentId: appointmentId || null,
+            },
+        });
         return res.status(201).json({
             success: true,
             message: "Prescription created successfully",

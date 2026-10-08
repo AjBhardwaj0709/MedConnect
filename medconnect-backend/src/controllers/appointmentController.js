@@ -4,6 +4,7 @@ const Doctor = require("../models/Doctor");
 const DoctorAvailability = require("../models/DoctorAvailability");
 const DoctorLeave = require("../models/DoctorLeave");
 const BlockedTimeSlot = require("../models/BlockedTimeSlot");
+const { createNotification } = require("../services/notificationService");
 
 // --------------------------------------------------
 // Helper: Normalize date to UTC day
@@ -266,6 +267,18 @@ const createAppointment = async (req, res) => {
             status: "pending",
         });
 
+
+        await createNotification({
+            userId: doctor.userId,
+            type: "appointment_booked",
+            title: "New Appointment",
+            message: `You have received a new appointment request for ${normalizedDate}.`,
+            data: {
+                appointmentId: appointment._id,
+                patientId: patient._id,
+            },
+        });
+
         // ---------------------------------------------
         // 15. Return response
         // ---------------------------------------------
@@ -374,7 +387,172 @@ const getDoctorAppointments = async (req, res) => {
         });
     }
 };
+// --------------------------------------------------
+// CANCEL APPOINTMENT
+// PUT /api/appointments/:id/cancel
+// --------------------------------------------------
 
+const cancelAppointment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { cancellationReason } = req.body;
+
+        // ---------------------------------------------
+        // 1. Find appointment
+        // ---------------------------------------------
+        const appointment = await Appointment.findById(id);
+
+        if (!appointment) {
+            return res.status(404).json({
+                success: false,
+                message: "Appointment not found",
+            });
+        }
+
+        // ---------------------------------------------
+        // 2. Only pending/confirmed can be cancelled
+        // ---------------------------------------------
+        if (
+            appointment.status !== "pending" &&
+            appointment.status !== "confirmed"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Only pending or confirmed appointments can be cancelled",
+            });
+        }
+
+        // ---------------------------------------------
+        // 3. Check user role and ownership
+        // ---------------------------------------------
+
+        if (req.user.role === "patient") {
+            const patient = await Patient.findOne({
+                userId: req.user.userId,
+            });
+
+            if (!patient) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Patient profile not found",
+                });
+            }
+
+            if (
+                appointment.patientId.toString() !==
+                patient._id.toString()
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        "You are not authorized to cancel this appointment",
+                });
+            }
+
+            // Cancel appointment
+            appointment.status = "cancelled";
+            appointment.cancellationReason =
+                cancellationReason || "Cancelled by patient";
+
+            await appointment.save();
+
+            // Find doctor
+            const doctor = await Doctor.findById(
+                appointment.doctorId
+            );
+
+            // Notify doctor
+            if (doctor) {
+                await createNotification({
+                    userId: doctor.userId,
+                    type: "appointment_cancelled",
+                    title: "Appointment Cancelled",
+                    message:
+                        "A patient has cancelled an appointment.",
+                    data: {
+                        appointmentId: appointment._id,
+                        patientId: patient._id,
+                    },
+                });
+            }
+        } else if (req.user.role === "doctor") {
+            const doctor = await Doctor.findOne({
+                userId: req.user.userId,
+                isVerified: true,
+                verificationStatus: "approved",
+            });
+
+            if (!doctor) {
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Approved doctor profile not found",
+                });
+            }
+
+            if (
+                appointment.doctorId.toString() !==
+                doctor._id.toString()
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        "You are not authorized to cancel this appointment",
+                });
+            }
+
+            // Cancel appointment
+            appointment.status = "cancelled";
+            appointment.cancellationReason =
+                cancellationReason || "Cancelled by doctor";
+
+            await appointment.save();
+
+            // Find patient
+            const patient = await Patient.findById(
+                appointment.patientId
+            );
+
+            // Notify patient
+            if (patient) {
+                await createNotification({
+                    userId: patient.userId,
+                    type: "appointment_cancelled",
+                    title: "Appointment Cancelled",
+                    message:
+                        "Your doctor has cancelled the appointment.",
+                    data: {
+                        appointmentId: appointment._id,
+                        doctorId: doctor._id,
+                    },
+                });
+            }
+        } else {
+            return res.status(403).json({
+                success: false,
+                message:
+                    "Only patient or doctor can cancel an appointment",
+            });
+        }
+
+        // ---------------------------------------------
+        // 4. Response
+        // ---------------------------------------------
+        return res.status(200).json({
+            success: true,
+            message: "Appointment cancelled successfully",
+            appointment,
+        });
+    } catch (error) {
+        console.error("Cancel appointment error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+        });
+    }
+};
 
 // --------------------------------------------------
 // RESCHEDULE APPOINTMENT
@@ -616,7 +794,22 @@ const rescheduleAppointment = async (req, res) => {
         appointment.status = "pending";
 
         await appointment.save();
-
+        // ---------------------------------------------
+        // Notify doctor about rescheduled appointment
+        // ---------------------------------------------
+        await createNotification({
+            userId: doctor.userId,
+            type: "appointment_rescheduled",
+            title: "Appointment Rescheduled",
+            message: `A patient has rescheduled their appointment to ${date} at ${startTime}.`,
+            data: {
+                appointmentId: appointment._id,
+                patientId: patient._id,
+                newDate: date,
+                newStartTime: startTime,
+                newEndTime: endTime,
+            },
+        });
         // ---------------------------------------------
         // 16. Response
         // ---------------------------------------------
@@ -634,10 +827,116 @@ const rescheduleAppointment = async (req, res) => {
         });
     }
 };
+// --------------------------------------------------
+// CONFIRM APPOINTMENT
+// PUT /api/appointments/:id/confirm
+// --------------------------------------------------
+
+const confirmAppointment = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // ---------------------------------------------
+        // 1. Find logged-in doctor
+        // ---------------------------------------------
+        const doctor = await Doctor.findOne({
+            userId: req.user.userId,
+            isVerified: true,
+            verificationStatus: "approved",
+        });
+
+        if (!doctor) {
+            return res.status(404).json({
+                success: false,
+                message: "Approved doctor profile not found",
+            });
+        }
+
+        // ---------------------------------------------
+        // 2. Find appointment
+        // ---------------------------------------------
+        const appointment = await Appointment.findById(id);
+
+        if (!appointment) {
+            return res.status(404).json({
+                success: false,
+                message: "Appointment not found",
+            });
+        }
+
+        // ---------------------------------------------
+        // 3. Doctor ownership check
+        // ---------------------------------------------
+        if (
+            appointment.doctorId.toString() !==
+            doctor._id.toString()
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to confirm this appointment",
+            });
+        }
+
+        // ---------------------------------------------
+        // 4. Appointment must be pending
+        // ---------------------------------------------
+        if (appointment.status !== "pending") {
+            return res.status(400).json({
+                success: false,
+                message: "Only pending appointments can be confirmed",
+            });
+        }
+
+        // ---------------------------------------------
+        // 5. Confirm appointment
+        // ---------------------------------------------
+        appointment.status = "confirmed";
+
+        await appointment.save();
+
+        // ---------------------------------------------
+        // 6. Notify patient
+        // ---------------------------------------------
+        const patient = await Patient.findById(
+            appointment.patientId
+        );
+
+        if (patient) {
+            await createNotification({
+                userId: patient.userId,
+                type: "appointment_confirmed",
+                title: "Appointment Confirmed",
+                message: `Your appointment has been confirmed for ${appointment.date} at ${appointment.startTime}.`,
+                data: {
+                    appointmentId: appointment._id,
+                    doctorId: doctor._id,
+                },
+            });
+        }
+
+        // ---------------------------------------------
+        // 7. Response
+        // ---------------------------------------------
+        return res.status(200).json({
+            success: true,
+            message: "Appointment confirmed successfully",
+            appointment,
+        });
+    } catch (error) {
+        console.error("Confirm appointment error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+        });
+    }
+};
 
 module.exports = {
     createAppointment,
     getMyAppointments,
     getDoctorAppointments,
+    confirmAppointment,
+    cancelAppointment,
     rescheduleAppointment,
 };

@@ -14,7 +14,8 @@ const slotRoutes = require("./routes/slotRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
 const medicalReportRoutes = require("./routes/medicalReportRoutes");
 const prescriptionRoutes = require("./routes/prescriptionRoutes");
-
+const notificationRoutes = require("./routes/notificationRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 const medicalHistoryRoutes = require("./routes/medicalHistoryRoutes");
 const app = express();
 app.use(express.json());
@@ -68,11 +69,17 @@ app.use(
   "/api/doctors/leave",
   leaveRoutes
 );
+// chat route
+app.use("/api/chat", chatRoutes);
+
 // doctor blocked time slots 
 app.use(
   "/api/doctors/blocked-slots",
   blockedTimeSlotRoutes
 );
+
+// notification routes
+app.use("/api/notifications", notificationRoutes);
 // medicine route
 app.use("/api/prescriptions", prescriptionRoutes);
 
