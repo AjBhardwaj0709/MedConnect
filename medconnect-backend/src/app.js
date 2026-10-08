@@ -11,6 +11,7 @@ const availabilityRoutes = require("./routes/availabilityRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
 const blockedTimeSlotRoutes = require("./routes/blockedTimeSlotRoutes");
 const slotRoutes = require("./routes/slotRoutes");
+const appointmentRoutes = require("./routes/appointmentRoutes");
 const app = express();
 app.use(express.json());
 
@@ -68,6 +69,10 @@ app.use(
   "/api/doctors/blocked-slots",
   blockedTimeSlotRoutes
 );
+
+//appointment routes
+app.use("/api/appointments", appointmentRoutes);
+
 // slot generator
 app.use("/api/doctors/slots", slotRoutes);
 // doctor routes 
