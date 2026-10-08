@@ -10,6 +10,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
 const blockedTimeSlotRoutes = require("./routes/blockedTimeSlotRoutes");
+const slotRoutes = require("./routes/slotRoutes");
 const app = express();
 app.use(express.json());
 
@@ -67,6 +68,8 @@ app.use(
   "/api/doctors/blocked-slots",
   blockedTimeSlotRoutes
 );
+// slot generator
+app.use("/api/doctors/slots", slotRoutes);
 // doctor routes 
 app.use("/api/doctors", doctorRoutes);
 
