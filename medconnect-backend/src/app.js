@@ -13,6 +13,9 @@ const blockedTimeSlotRoutes = require("./routes/blockedTimeSlotRoutes");
 const slotRoutes = require("./routes/slotRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
 const medicalReportRoutes = require("./routes/medicalReportRoutes");
+const prescriptionRoutes = require("./routes/prescriptionRoutes");
+
+const medicalHistoryRoutes = require("./routes/medicalHistoryRoutes");
 const app = express();
 app.use(express.json());
 
@@ -70,11 +73,19 @@ app.use(
   "/api/doctors/blocked-slots",
   blockedTimeSlotRoutes
 );
+// medicine route
+app.use("/api/prescriptions", prescriptionRoutes);
 
 // medical report routes
 app.use(
   "/api/medical-reports",
   medicalReportRoutes
+);
+
+// medical history route
+app.use(
+  "/api/medical-history",
+  medicalHistoryRoutes
 );
 
 //appointment routes
