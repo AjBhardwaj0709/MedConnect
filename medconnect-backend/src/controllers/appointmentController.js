@@ -5,7 +5,7 @@ const DoctorAvailability = require("../models/DoctorAvailability");
 const DoctorLeave = require("../models/DoctorLeave");
 const BlockedTimeSlot = require("../models/BlockedTimeSlot");
 const { createNotification } = require("../services/notificationService");
-
+const AppointmentAction = require("../models/AppointmentAction");
 // --------------------------------------------------
 // Helper: Normalize date to UTC day
 // --------------------------------------------------
@@ -23,6 +23,44 @@ const normalizeDate = (date) => {
             newDate.getUTCDate()
         )
     );
+};
+
+
+const getIndiaDayRange = () => {
+    const now = new Date();
+
+    // Convert current time to India Standard Time (UTC+5:30)
+    const indiaNow = new Date(
+        now.getTime() + 330 * 60 * 1000
+    );
+
+    const start = new Date(
+        Date.UTC(
+            indiaNow.getUTCFullYear(),
+            indiaNow.getUTCMonth(),
+            indiaNow.getUTCDate()
+        ) - 330 * 60 * 1000
+    );
+
+    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+
+    return { start, end };
+};
+
+const countPatientActionsToday = async (
+    patientId,
+    action
+) => {
+    const { start, end } = getIndiaDayRange();
+
+    return AppointmentAction.countDocuments({
+        patientId,
+        action,
+        createdAt: {
+            $gte: start,
+            $lt: end,
+        },
+    });
 };
 
 // --------------------------------------------------
@@ -254,6 +292,25 @@ const createAppointment = async (req, res) => {
             });
         }
 
+
+        // helper function for restrict multiple booking of the time slots 
+        const activeAppointmentsToday = await Appointment.countDocuments({
+            patientId: patient._id,
+            date: normalizedDate,
+            status: {
+                $in: ["pending", "confirmed"],
+            },
+        });
+
+        if (activeAppointmentsToday >= 2) {
+            return res.status(409).json({
+                success: false,
+                message:
+                    "Daily appointment limit reached. You can have a maximum of 2 active appointments per day.",
+            });
+        }
+
+
         // ---------------------------------------------
         // 14. Create appointment
         // ---------------------------------------------
@@ -450,13 +507,30 @@ const cancelAppointment = async (req, res) => {
                 });
             }
 
+            const cancellationCount = await countPatientActionsToday(
+                patient._id,
+                "cancelled"
+            );
+
+            if (cancellationCount >= 3) {
+                return res.status(429).json({
+                    success: false,
+                    message:
+                        "Daily cancellation limit reached. You can cancel a maximum of 3 appointments per day. Please try again tomorrow.",
+                });
+            }
+            
             // Cancel appointment
             appointment.status = "cancelled";
             appointment.cancellationReason =
                 cancellationReason || "Cancelled by patient";
 
             await appointment.save();
-
+            await AppointmentAction.create({
+                patientId: patient._id,
+                appointmentId: appointment._id,
+                action: "cancelled",
+            });
             // Find doctor
             const doctor = await Doctor.findById(
                 appointment.doctorId
@@ -691,6 +765,19 @@ const rescheduleAppointment = async (req, res) => {
             });
         }
 
+        const rescheduleCount = await countPatientActionsToday(
+            patient._id,
+            "rescheduled"
+        );
+
+        if (rescheduleCount >= 2) {
+            return res.status(429).json({
+                success: false,
+                message:
+                    "Daily reschedule limit reached. You can reschedule a maximum of 2 appointments per day. Please try again tomorrow.",
+            });
+        }
+
         // ---------------------------------------------
         // 10. Find approved doctor
         // ---------------------------------------------
@@ -794,6 +881,12 @@ const rescheduleAppointment = async (req, res) => {
         appointment.status = "pending";
 
         await appointment.save();
+
+        await AppointmentAction.create({
+            patientId: patient._id,
+            appointmentId: appointment._id,
+            action: "rescheduled",
+        });
         // ---------------------------------------------
         // Notify doctor about rescheduled appointment
         // ---------------------------------------------
