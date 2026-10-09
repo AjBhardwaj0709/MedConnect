@@ -17,6 +17,9 @@ const prescriptionRoutes = require("./routes/prescriptionRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const medicalHistoryRoutes = require("./routes/medicalHistoryRoutes");
+const videoConsultationRoutes = require(
+  "./routes/videoConsultationRoutes"
+);
 const app = express();
 app.use(express.json());
 
@@ -68,6 +71,11 @@ app.use(
 app.use(
   "/api/doctors/leave",
   leaveRoutes
+);
+// video call routes
+app.use(
+  "/api/video-consultations",
+  videoConsultationRoutes
 );
 // chat route
 app.use("/api/chat", chatRoutes);

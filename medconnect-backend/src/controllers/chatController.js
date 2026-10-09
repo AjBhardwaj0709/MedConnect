@@ -3,6 +3,174 @@ const ChatMessage = require("../models/ChatMessage");
 const Patient = require("../models/Patient");
 const Doctor = require("../models/Doctor");
 
+
+
+// helper function for conversation access
+const getUserConversationFilter = async (req) => {
+    const userId = req.user.userId;
+
+    if (req.user.role === "patient") {
+        const patient = await Patient.findOne({ userId });
+
+        if (!patient) {
+            return null;
+        }
+
+        return { patientId: patient._id };
+    }
+
+    if (req.user.role === "doctor") {
+        const doctor = await Doctor.findOne({ userId });
+
+        if (!doctor) {
+            return null;
+        }
+
+        return { doctorId: doctor._id };
+    }
+
+    return null;
+};
+
+
+// total unread message helper 
+const getTotalUnreadCount = async (req, res) => {
+    try {
+        const conversationFilter =
+            await getUserConversationFilter(req);
+
+        if (!conversationFilter) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to access chat.",
+            });
+        }
+
+        const conversations = await ChatConversation.find(
+            conversationFilter
+        ).select("_id");
+
+        const conversationIds = conversations.map(
+            (conversation) => conversation._id
+        );
+
+        const unreadCount = await ChatMessage.countDocuments({
+            conversationId: { $in: conversationIds },
+            senderId: { $ne: req.user.userId },
+            isRead: false,
+        });
+
+        return res.status(200).json({
+            success: true,
+            unreadCount,
+        });
+    } catch (error) {
+        console.error("Get total unread count error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch unread message count.",
+        });
+    }
+};
+
+// get unread count for specific conversation 
+const getConversationUnreadCount = async (req, res) => {
+    try {
+        const conversationFilter =
+            await getUserConversationFilter(req);
+
+        if (!conversationFilter) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to access chat.",
+            });
+        }
+
+        const conversation = await ChatConversation.findOne({
+            _id: req.params.conversationId,
+            ...conversationFilter,
+        });
+
+        if (!conversation) {
+            return res.status(404).json({
+                success: false,
+                message: "Conversation not found.",
+            });
+        }
+
+        const unreadCount = await ChatMessage.countDocuments({
+            conversationId: conversation._id,
+            senderId: { $ne: req.user.userId },
+            isRead: false,
+        });
+
+        return res.status(200).json({
+            success: true,
+            conversationId: conversation._id,
+            unreadCount,
+        });
+    } catch (error) {
+        console.error("Get conversation unread count error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch conversation unread count.",
+        });
+    }
+};
+
+// mark conversation as read 
+const markConversationAsRead = async (req, res) => {
+    try {
+        const conversationFilter =
+            await getUserConversationFilter(req);
+
+        if (!conversationFilter) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to access chat.",
+            });
+        }
+
+        const conversation = await ChatConversation.findOne({
+            _id: req.params.conversationId,
+            ...conversationFilter,
+        });
+
+        if (!conversation) {
+            return res.status(404).json({
+                success: false,
+                message: "Conversation not found.",
+            });
+        }
+
+        const result = await ChatMessage.updateMany(
+            {
+                conversationId: conversation._id,
+                senderId: { $ne: req.user.userId },
+                isRead: false,
+            },
+            {
+                $set: { isRead: true },
+            }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Conversation marked as read.",
+            modifiedCount: result.modifiedCount,
+        });
+    } catch (error) {
+        console.error("Mark conversation as read error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to mark conversation as read.",
+        });
+    }
+};
+
 // =====================================================
 // CREATE / GET CONVERSATION
 // =====================================================
@@ -316,6 +484,9 @@ const markMessageAsRead = async (req, res) => {
 };
 
 module.exports = {
+    getTotalUnreadCount,
+    getConversationUnreadCount,
+    markConversationAsRead,
     createConversation,
     getMyConversations,
     getMessages,

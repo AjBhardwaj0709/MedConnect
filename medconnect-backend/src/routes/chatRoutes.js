@@ -1,6 +1,9 @@
 const express = require("express");
 
 const {
+    getTotalUnreadCount,
+    getConversationUnreadCount,
+    markConversationAsRead,
     createConversation,
     getMyConversations,
     getMessages,
@@ -24,7 +27,29 @@ router.use(
     protect,
     authorize("patient", "doctor")
 );
+// Total unread messages across all conversations
+router.get(
+    "/unread-count",
+    protect,
+    authorize("patient", "doctor"),
+    getTotalUnreadCount
+);
 
+// Mark all received messages in a conversation as read
+router.put(
+    "/:conversationId/read",
+    protect,
+    authorize("patient", "doctor"),
+    markConversationAsRead
+);
+
+// Unread messages in one conversation
+router.get(
+    "/:conversationId/unread-count",
+    protect,
+    authorize("patient", "doctor"),
+    getConversationUnreadCount
+);
 // =====================================================
 // FILE UPLOAD ERROR HANDLER
 // =====================================================
