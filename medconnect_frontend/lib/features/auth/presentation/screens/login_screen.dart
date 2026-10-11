@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -44,20 +45,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return null;
   }
 
-  Future<void> _login() async {
+Future<void> _login() async {
     FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) return;
 
-    // TODO: Call the login use case through the Riverpod controller.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Login API integration is pending.')),
-    );
+    try {
+      final user = await ref
+          .read(authControllerProvider.notifier)
+          .login(email: _email.text.trim(), password: _password.text);
+
+      if (!mounted || user == null) return;
+
+      if (user.role.toLowerCase() != _role.name) {
+        await ref.read(authControllerProvider.notifier).logout();
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This account does not match the selected role.'),
+          ),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Welcome back, ${user.email}!')));
+
+      // TODO: Navigate to the appropriate dashboard.
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(_errorMessage(error))));
+    }
+  }
+
+  String _errorMessage(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+
+      if (data is Map && data['message'] != null) {
+        return data['message'].toString();
+      }
+
+      if (error.response == null) {
+        return 'Cannot connect to MedConnect server. Check the server URL.';
+      }
+
+      return 'Login failed (${error.response?.statusCode ?? 'unknown'}).';
+    }
+
+    return error.toString().replaceFirst('Exception: ', '');
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(authControllerProvider);
+    final authState = ref.watch(authControllerProvider);
+    final isLoading = authState.isLoading;
 
     return Scaffold(
       backgroundColor: background,

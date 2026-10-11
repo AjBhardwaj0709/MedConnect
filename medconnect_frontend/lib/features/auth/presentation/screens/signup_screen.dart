@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,6 +26,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _specialization = TextEditingController();
   final _registrationNumber = TextEditingController();
 
+  final _dateOfBirth = TextEditingController();
+  String? _selectedGender;
+  final _address = TextEditingController();
+
+  final _qualification = TextEditingController();
+  final _experience = TextEditingController();
+  final _consultationFee = TextEditingController();
+
   UserRole _role = UserRole.patient;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -43,6 +52,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _confirmPassword.dispose();
     _specialization.dispose();
     _registrationNumber.dispose();
+
+    _dateOfBirth.dispose();
+
+    _address.dispose();
+    _qualification.dispose();
+    _experience.dispose();
+    _consultationFee.dispose();
+
     super.dispose();
   }
 
@@ -63,21 +80,60 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     return null;
   }
 
-  String? _validatePhone(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Phone number is required';
+  // String? _validatePhone(String? value) {
+  //   if (value == null || value.trim().isEmpty) {
+  //     return 'Phone number is required';
+  //   }
+  //   if (!RegExp(r'^\d{10}$').hasMatch(value.trim())) {
+  //     return 'Enter a valid 10-digit phone number';
+  //   }
+  //   return null;
+  // }
+
+  Future<void> _selectDateOfBirth() async {
+    final now = DateTime.now();
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime(now.year - 18, now.month, now.day),
+      firstDate: DateTime(1900),
+      lastDate: now,
+      helpText: 'Select your date of birth',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: primary,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: ink,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null && mounted) {
+      setState(() {
+        _dateOfBirth.text =
+            '${pickedDate.year.toString().padLeft(4, '0')}-'
+            '${pickedDate.month.toString().padLeft(2, '0')}-'
+            '${pickedDate.day.toString().padLeft(2, '0')}';
+      });
     }
-    if (!RegExp(r'^\d{10}$').hasMatch(value.trim())) {
-      return 'Enter a valid 10-digit phone number';
-    }
-    return null;
   }
 
   Future<void> _signup() async {
     FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) return;
-
+    if (_role == UserRole.patient && _selectedGender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your gender')),
+      );
+      return;
+    }
     if (_password.text != _confirmPassword.text) {
       ScaffoldMessenger.of(
         context,
@@ -85,16 +141,76 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return;
     }
 
-    // TODO: Call the signup use case through the Riverpod controller.
-    // Send the selected role and matching fields to your backend.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Signup API integration is pending.')),
-    );
+    final Map<String, dynamic> data = {
+      'name': _name.text.trim().toLowerCase(),
+      'email': _email.text.trim().toLowerCase(),
+      'password': _password.text,
+    };
+
+    if (_role == UserRole.patient) {
+      data.addAll({
+        'dateOfBirth': _dateOfBirth.text.trim(),
+        'gender': _selectedGender!.toLowerCase(),
+        'address': _address.text.trim().toLowerCase(),
+      });
+    } else {
+      final experience = int.parse(_experience.text.trim());
+      final fee = double.parse(_consultationFee.text.trim());
+
+      data.addAll({
+        'specialization': _specialization.text.trim().toLowerCase(),
+        'registrationNumber': _registrationNumber.text.trim().toLowerCase(),
+        'qualification': _qualification.text.trim().toLowerCase(),
+        'experience': experience,
+        'consultationFee': fee,
+      });
+    }
+
+    try {
+      final controller = ref.read(authControllerProvider.notifier);
+
+      final user = _role == UserRole.patient
+          ? await controller.signupPatient(data)
+          : await controller.signupDoctor(data);
+
+      if (!mounted || user == null) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _role == UserRole.doctor
+                ? 'Doctor account created. Check verification status.'
+                : 'Patient account created successfully.',
+          ),
+        ),
+      );
+
+      // TODO: Navigate based on the actual signup response.
+    } catch (error) {
+      if (!mounted) return;
+
+      String message = error.toString().replaceFirst('Exception: ', '');
+
+      if (error is DioException) {
+        final responseData = error.response?.data;
+
+        if (responseData is Map && responseData['message'] != null) {
+          message = responseData['message'].toString();
+        } else if (error.response == null) {
+          message = 'Cannot connect to MedConnect server.';
+        } else {
+          message = 'Signup failed (${error.response?.statusCode}).';
+        }
+      }
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(authControllerProvider);
+    final isLoading = ref.watch(authControllerProvider).isLoading;
 
     return Scaffold(
       backgroundColor: background,
@@ -190,6 +306,132 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           //   validator: _validatePhone,
                           // ),
 
+                          if (_role == UserRole.patient) ...[
+                            const SizedBox(height: 17),
+
+                            InkWell(
+                              onTap: _selectDateOfBirth,
+                              borderRadius: BorderRadius.circular(14),
+                              child: IgnorePointer(
+                                child: AuthTextField(
+                                  controller: _dateOfBirth,
+                                  label: 'Date of birth',
+                                  hint: 'Select your date of birth',
+                                  icon: Icons.calendar_month_outlined,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please select your date of birth';
+                                    }
+                                    return null;
+                                  },
+                                  suffixIcon: const Icon(
+                                    Icons.calendar_today_outlined,
+                                    color: primary,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 17),
+
+                            const Text(
+                              'Gender',
+                              style: TextStyle(
+                                color: ink,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: const Color(0xFFE5EDF3),
+                                ),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(14),
+                                clipBehavior: Clip.antiAlias,
+                                child: Column(
+                                  children: [
+                                    RadioListTile<String>(
+                                      title: const Text('Male'),
+                                      value: 'Male',
+                                      groupValue: _selectedGender,
+                                      activeColor: primary,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                          ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedGender = value;
+                                        });
+                                      },
+                                    ),
+                                    RadioListTile<String>(
+                                      title: const Text('Female'),
+                                      value: 'Female',
+                                      groupValue: _selectedGender,
+                                      activeColor: primary,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                          ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedGender = value;
+                                        });
+                                      },
+                                    ),
+                                    RadioListTile<String>(
+                                      title: const Text('Other'),
+                                      value: 'Other',
+                                      groupValue: _selectedGender,
+                                      activeColor: primary,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                          ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedGender = value;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (_selectedGender == null)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 6, left: 12),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Please select your gender',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                            const SizedBox(height: 17),
+                            AuthTextField(
+                              controller: _address,
+                              label: 'Address',
+                              hint: 'Enter your address',
+                              icon: Icons.location_on_outlined,
+                              validator: (v) => _required(v, 'Address'),
+                            ),
+                          ],
+
                           if (_role == UserRole.doctor) ...[
                             const SizedBox(height: 17),
                             AuthTextField(
@@ -207,6 +449,53 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               icon: Icons.badge_outlined,
                               validator: (v) =>
                                   _required(v, 'Registration number'),
+                            ),
+                            const SizedBox(height: 17),
+                            AuthTextField(
+                              controller: _qualification,
+                              label: 'Qualification',
+                              hint: 'e.g. MBBS, MD',
+                              icon: Icons.school_outlined,
+                              validator: (v) => _required(v, 'Qualification'),
+                            ),
+                            const SizedBox(height: 17),
+                            AuthTextField(
+                              controller: _experience,
+                              label: 'Years of experience',
+                              hint: 'e.g. 5',
+                              icon: Icons.work_outline,
+                              keyboardType: TextInputType.number,
+                              validator: (v) {
+                                if (v == null ||
+                                    int.tryParse(v.trim()) == null) {
+                                  return 'Enter valid years of experience';
+                                }
+                                if (int.parse(v.trim()) < 0) {
+                                  return 'Experience cannot be negative';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 17),
+                            AuthTextField(
+                              controller: _consultationFee,
+                              label: 'Consultation fee',
+                              hint: 'e.g. 500',
+                              icon: Icons.currency_rupee,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              validator: (v) {
+                                if (v == null ||
+                                    double.tryParse(v.trim()) == null) {
+                                  return 'Enter a valid consultation fee';
+                                }
+                                if (double.parse(v.trim()) < 0) {
+                                  return 'Fee cannot be negative';
+                                }
+                                return null;
+                              },
                             ),
                           ],
 
