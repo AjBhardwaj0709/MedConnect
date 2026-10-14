@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -36,33 +35,28 @@ final GoRouter appRouter = GoRouter(
     // =========================
     // DOCTOR ROUTES
     // =========================
-
     GoRoute(
       path: '/doctor/dashboard',
       name: 'doctorDashboard',
-      builder: (context, state) =>
-          const DoctorDashboardScreen(),
+      builder: (context, state) => const DoctorDashboardScreen(),
     ),
 
     GoRoute(
       path: '/doctor/profile',
       name: 'doctorProfile',
-      builder: (context, state) =>
-          const DoctorProfileScreen(),
+      builder: (context, state) => const DoctorProfileScreen(),
     ),
 
     GoRoute(
       path: '/doctor/availability',
       name: 'doctorAvailability',
-      builder: (context, state) =>
-          const DoctorAvailabilityScreen(),
+      builder: (context, state) => const DoctorAvailabilityScreen(),
     ),
 
     GoRoute(
       path: '/doctor/appointments',
       name: 'doctorAppointments',
-      builder: (context, state) =>
-          const DoctorAppointmentsScreen(),
+      builder: (context, state) => const DoctorAppointmentsScreen(),
     ),
 
     GoRoute(
@@ -102,29 +96,21 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/doctor/chat',
       name: 'doctorChat',
-      builder: (context, state) =>
-          const DoctorChatScreen(),
+      builder: (context, state) => const DoctorChatScreen(),
     ),
   ],
 
   // =========================
   // ERROR PAGE
   // =========================
-
   errorBuilder: (context, state) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Page not found'),
-      ),
+      appBar: AppBar(title: const Text('Page not found')),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 60,
-              color: Colors.red,
-            ),
+            const Icon(Icons.error_outline, size: 60, color: Colors.red),
             const SizedBox(height: 16),
             const Text('The requested page could not be found.'),
             const SizedBox(height: 16),
