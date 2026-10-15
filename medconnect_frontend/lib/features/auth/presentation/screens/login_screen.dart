@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../providers/auth_providers.dart';
 import '../widgets/auth_button.dart';
@@ -75,6 +76,17 @@ Future<void> _login() async {
       ).showSnackBar(SnackBar(content: Text('Welcome back, ${user.email}!')));
 
       // TODO: Navigate to the appropriate dashboard.
+      
+      if (!mounted) return;
+
+      if (user.role.toLowerCase() == _role.name) {
+        if (user.role.toLowerCase() == 'doctor') {
+          context.go('/doctor/dashboard');
+        } else if (user.role.toLowerCase() == 'patient') {
+          context.go('/patient/dashboard');
+        }
+      }
+
     } catch (error) {
       if (!mounted) return;
 

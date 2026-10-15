@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:medconnect_frontend/app/theme/app_theme.dart';
 
 class DoctorDashboardScreen extends StatefulWidget {
@@ -154,7 +155,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
         IconButton(
           tooltip: 'Notifications',
           onPressed: () {
-            _showMessage('Notifications will be connected later.');
+            context.push('/doctor/notifications');
           },
           style: IconButton.styleFrom(
             backgroundColor: Colors.white,

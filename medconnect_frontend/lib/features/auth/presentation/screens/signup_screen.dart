@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../providers/auth_providers.dart';
 import '../widgets/auth_button.dart';
@@ -173,19 +174,30 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ? await controller.signupPatient(data)
           : await controller.signupDoctor(data);
 
+
       if (!mounted || user == null) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _role == UserRole.doctor
-                ? 'Doctor account created. Check verification status.'
-                : 'Patient account created successfully.',
+      if (_role == UserRole.doctor) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Doctor account created successfully. Your verification is pending.',
+            ),
           ),
-        ),
-      );
+        );
 
-      // TODO: Navigate based on the actual signup response.
+        context.go('/doctor/dashboard');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Patient account created successfully.'),
+          ),
+        );
+
+        context.go('/patient/dashboard');
+      }
+
+    
     } catch (error) {
       if (!mounted) return;
 

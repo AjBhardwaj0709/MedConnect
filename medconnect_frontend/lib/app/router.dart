@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:medconnect_frontend/features/doctor/presentation/screens/doctor_notifications_screen.dart';
 
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/signup_screen.dart';
@@ -58,7 +59,10 @@ final GoRouter appRouter = GoRouter(
       name: 'doctorAppointments',
       builder: (context, state) => const DoctorAppointmentsScreen(),
     ),
-
+GoRoute(
+      path: '/doctor/notifications',
+      builder: (context, state) => const DoctorNotificationsScreen(),
+    ),
     GoRoute(
       path: '/doctor/prescriptions',
       name: 'doctorPrescriptions',
