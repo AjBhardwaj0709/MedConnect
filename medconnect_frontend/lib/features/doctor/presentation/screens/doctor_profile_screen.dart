@@ -6,7 +6,6 @@ class DoctorProfileScreen extends StatefulWidget {
     super.key,
     this.initialName = '',
     this.initialEmail = '',
-
     this.initialSpecialization = '',
     this.initialQualification = '',
     this.initialRegistrationNumber = '',
@@ -19,7 +18,6 @@ class DoctorProfileScreen extends StatefulWidget {
 
   final String initialName;
   final String initialEmail;
-
   final String initialSpecialization;
   final String initialQualification;
   final String initialRegistrationNumber;
@@ -35,13 +33,10 @@ class DoctorProfileScreen extends StatefulWidget {
 }
 
 class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
-
-
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _name;
   late final TextEditingController _email;
-
   late final TextEditingController _specialization;
   late final TextEditingController _qualification;
   late final TextEditingController _registration;
@@ -58,7 +53,6 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
 
     _name = TextEditingController(text: widget.initialName);
     _email = TextEditingController(text: widget.initialEmail);
-
     _specialization = TextEditingController(text: widget.initialSpecialization);
     _qualification = TextEditingController(text: widget.initialQualification);
     _registration = TextEditingController(
@@ -77,7 +71,6 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   void dispose() {
     _name.dispose();
     _email.dispose();
-
     _specialization.dispose();
     _qualification.dispose();
     _registration.dispose();
@@ -114,7 +107,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
 
     if (widget.onSave == null) {
       _showMessage(
-        'Profile API is not connected yet. Your changes are not saved.',
+        'Profile API is not connected. Your changes were not saved.',
       );
       return;
     }
@@ -122,7 +115,6 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
     final data = <String, dynamic>{
       'name': _name.text.trim(),
       'email': _email.text.trim(),
-     
       'specialization': _specialization.text.trim(),
       'qualification': _qualification.text.trim(),
       'registrationNumber': _registration.text.trim(),
@@ -151,16 +143,31 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  void _cancelEditing() {
+    setState(() {
+      _name.text = widget.initialName;
+      _email.text = widget.initialEmail;
+      _specialization.text = widget.initialSpecialization;
+      _qualification.text = widget.initialQualification;
+      _registration.text = widget.initialRegistrationNumber;
+      _experience.text = widget.initialExperience.toString();
+      _fee.text = widget.initialConsultationFee.toStringAsFixed(0);
+      _address.text = widget.initialAddress;
+      _isEditing = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final approved = widget.verificationStatus.toLowerCase() == 'approved';
-
+    debugPrint('DOCTOR PROFILE SCREEN BUILD CALLED');
     return Scaffold(
-      backgroundColor:AppColors. background,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
@@ -205,6 +212,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                 label: 'Email address',
                 icon: Icons.mail_outline_rounded,
                 keyboardType: TextInputType.emailAddress,
+                fieldEnabled: false,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) {
                     return 'Email is required';
@@ -216,10 +224,9 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                   return null;
                 },
               ),
-             
               _field(
                 controller: _address,
-                label: 'Address',
+                label: 'Clinic address',
                 icon: Icons.location_on_outlined,
                 maxLines: 2,
               ),
@@ -310,11 +317,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                 ),
                 const SizedBox(height: 10),
                 OutlinedButton(
-                  onPressed: _isSaving
-                      ? null
-                      : () {
-                          setState(() => _isEditing = false);
-                        },
+                  onPressed: _isSaving ? null : _cancelEditing,
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),
                     foregroundColor: AppColors.ink,
@@ -416,7 +419,8 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   }
 
   Widget _buildVerificationCard(bool approved) {
-    final rejected = widget.verificationStatus.toLowerCase() == 'rejected';
+    final status = widget.verificationStatus.toLowerCase();
+    final rejected = status == 'rejected';
 
     final color = approved
         ? const Color(0xFF23875B)
@@ -491,7 +495,10 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
           ),
         ),
         const SizedBox(height: 5),
-        Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+        Text(
+          subtitle,
+          style: const TextStyle(color: AppColors.muted, fontSize: 12),
+        ),
       ],
     );
   }
@@ -503,12 +510,15 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
     int maxLines = 1,
+    bool? fieldEnabled,
   }) {
+    final isEnabled = fieldEnabled ?? _isEditing;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: TextFormField(
         controller: controller,
-        enabled: _isEditing,
+        enabled: isEnabled,
         keyboardType: keyboardType,
         validator: validator,
         maxLines: maxLines,
@@ -519,10 +529,10 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
         ),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: AppColors. primary, size: 21),
+          prefixIcon: Icon(icon, color: AppColors.primary, size: 21),
           filled: true,
-          fillColor: _isEditing ? Colors.white : const Color(0xFFF0F5F8),
-          labelStyle: const TextStyle(color: AppColors. muted, fontSize: 13),
+          fillColor: isEnabled ? Colors.white : const Color(0xFFF0F5F8),
+          labelStyle: const TextStyle(color: AppColors.muted, fontSize: 13),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 17,
@@ -541,11 +551,15 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: const BorderSide(color: AppColors. primary, width: 1.5),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
             borderSide: const BorderSide(color: Colors.red),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: Colors.red, width: 1.5),
           ),
         ),
       ),

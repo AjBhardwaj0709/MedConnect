@@ -10,13 +10,13 @@ import 'package:medconnect_frontend/features/auth/domain/usecases/login_usecase.
 import 'package:medconnect_frontend/features/auth/domain/usecases/signup_usecase.dart';
 
 
-final dioClientProvider = Provider<DioClient>((ref) {
-  return DioClient();
-});
 final tokenStorageProvider = Provider<TokenStorage>((ref) {
   return TokenStorage();
 });
 
+final dioClientProvider = Provider<DioClient>((ref) {
+  return DioClient(tokenStorage: ref.watch(tokenStorageProvider));
+});
 final authRemoteDataSource = Provider<AuthRemoteDataSource>((ref) {
   return AuthRemoteDataSource(
     ref.watch(dioClientProvider),

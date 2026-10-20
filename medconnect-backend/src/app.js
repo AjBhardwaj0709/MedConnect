@@ -30,12 +30,16 @@ app.use(helmet());
 
 
 // CORS
+// CORS — must run before API routes
 app.use(
   cors({
-    origin: "*",
+    origin: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "ngrok-skip-browser-warning",],
+    
+    optionsSuccessStatus: 204,
   })
 );
-
 
 // JSON
 app.use(express.json());

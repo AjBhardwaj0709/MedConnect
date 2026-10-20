@@ -88,11 +88,13 @@ const updateDoctorProfile = async (req, res) => {
         if (profileImage !== undefined) {
             doctor.profileImage = profileImage;
         }
-        await doctor.save();
+        const updatedDoctor = await Doctor.findById(doctor._id)
+            .populate("userId", "email role");
+
         return res.status(200).json({
             success: true,
-            message: "Doctor Profile update successfully ",
-            doctor
+            message: "Doctor Profile updated successfully",
+            doctor: updatedDoctor
         });
 
     }

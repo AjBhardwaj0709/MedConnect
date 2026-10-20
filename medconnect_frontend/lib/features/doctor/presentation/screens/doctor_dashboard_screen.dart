@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medconnect_frontend/app/theme/app_theme.dart';
+import 'package:medconnect_frontend/features/doctor/presentation/screens/doctor_appointments_screen.dart';
+import 'package:medconnect_frontend/features/doctor/presentation/screens/doctor_availability_screen.dart';
+import 'package:medconnect_frontend/features/doctor/presentation/screens/doctor_profile_connected_screen.dart';
 
 class DoctorDashboardScreen extends StatefulWidget {
   const DoctorDashboardScreen({
@@ -23,22 +26,12 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
   Widget build(BuildContext context) {
     final pages = [
       _buildDashboard(),
-      const _PlaceholderPage(
-        title: 'Appointments',
-        subtitle: 'Manage your patient appointments here.',
-        icon: Icons.calendar_month_rounded,
-      ),
-      const _PlaceholderPage(
-        title: 'Availability',
-        subtitle: 'Manage your working days and time slots.',
-        icon: Icons.schedule_rounded,
-      ),
-      const _PlaceholderPage(
-        title: 'My Profile',
-        subtitle: 'View and update your professional profile.',
-        icon: Icons.person_outline_rounded,
-      ),
+      const DoctorAppointmentsScreen(),
+      const DoctorAvailabilityScreen(),
+      const DoctorProfileConnectedScreen(),
     ];
+
+   
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -52,6 +45,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
             _selectedIndex = index;
           });
         },
+
         backgroundColor: Colors.white,
         indicatorColor: const Color(0xFFDDF2F6),
         destinations: const [
@@ -87,7 +81,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-             _buildHeader(),
+              _buildHeader(),
               const SizedBox(height: 24),
               _buildWelcomeCard(),
               const SizedBox(height: 22),
@@ -148,7 +142,6 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
                 'Doctor workspace',
                 style: TextStyle(color: AppColors.muted, fontSize: 12),
               ),
-              
             ],
           ),
         ),
@@ -181,7 +174,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
         ),
         borderRadius: BorderRadius.circular(24),
       ),
-       child: Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -239,6 +232,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
       ),
     );
   }
+
   Widget _sectionTitle(String title, String subtitle) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,10 +248,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
         const SizedBox(height: 5),
         Text(
           subtitle,
-          style: const TextStyle(
-            color: AppColors. muted,
-            fontSize: 12,
-          ),
+          style: const TextStyle(color: AppColors.muted, fontSize: 12),
         ),
       ],
     );
@@ -345,7 +336,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
             'Your schedule will appear here',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color:AppColors.ink,
+              color: AppColors.ink,
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
@@ -354,11 +345,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
           Text(
             'Connect the appointments API to view real bookings.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.muted,
-              fontSize: 12,
-              height: 1.5,
-            ),
+            style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.5),
           ),
         ],
       ),
@@ -374,14 +361,14 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
     final Color statusColor = isApproved
         ? const Color(0xFF23875B)
         : isRejected
-            ? const Color(0xFFB42318)
-            : const Color(0xFFB7791F);
+        ? const Color(0xFFB42318)
+        : const Color(0xFFB7791F);
 
     final IconData statusIcon = isApproved
         ? Icons.verified_rounded
         : isRejected
-            ? Icons.cancel_outlined
-            : Icons.hourglass_top_rounded;
+        ? Icons.cancel_outlined
+        : Icons.hourglass_top_rounded;
 
     return Container(
       padding: const EdgeInsets.all(17),
@@ -419,12 +406,9 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
                   isApproved
                       ? 'Your account is verified.'
                       : isRejected
-                          ? 'Your account needs attention.'
-                          : 'Your account is awaiting verification.',
-                  style: const TextStyle(
-                    color: AppColors. muted,
-                    fontSize: 11,
-                  ),
+                      ? 'Your account needs attention.'
+                      : 'Your account is awaiting verification.',
+                  style: const TextStyle(color: AppColors.muted, fontSize: 11),
                 ),
               ],
             ),
@@ -432,10 +416,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
           const SizedBox(width: 8),
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 9,
-                vertical: 6,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
               decoration: BoxDecoration(
                 color: statusColor.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(20),
@@ -456,11 +437,10 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
     );
   }
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
+  // void _showMessage(String message) {
+  //   ScaffoldMessenger.of(context)
+  //       .showSnackBar(SnackBar(content: Text(message)));
+  // }
 }
 
 class _StatCard extends StatelessWidget {
@@ -502,10 +482,7 @@ class _StatCard extends StatelessWidget {
             title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFF74869A),
-              fontSize: 11,
-            ),
+            style: const TextStyle(color: Color(0xFF74869A), fontSize: 11),
           ),
         ],
       ),
@@ -556,10 +533,7 @@ class _QuickAction extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: Color(0xFF74869A),
-                  fontSize: 11,
-                ),
+                style: const TextStyle(color: Color(0xFF74869A), fontSize: 11),
               ),
             ],
           ),
@@ -568,54 +542,3 @@ class _QuickAction extends StatelessWidget {
     );
   }
 }
-
-class _PlaceholderPage extends StatelessWidget {
-  const _PlaceholderPage({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-  });
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 54,
-              color: const Color(0xFF167D9A),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 23,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF17324D),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF74869A),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-

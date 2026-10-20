@@ -10,7 +10,7 @@ class TokenStorage {
   }
 
   Future<String?> getToken() async {
-    await _storage.read(key: _tokenKey);
+   return await _storage.read(key: _tokenKey);
   }
 
   Future<void> clearToken() async {
