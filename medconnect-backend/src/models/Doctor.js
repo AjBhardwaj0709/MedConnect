@@ -62,8 +62,12 @@ const doctorSchema = new mongoose.Schema(
         },
         profileImage: {
             type: String,
+            default: "",
         },
-
+        profileImagePublicId: {
+            type: String,
+            default: "",
+        },
         isVerified: {
             type: Boolean,
             default: false,

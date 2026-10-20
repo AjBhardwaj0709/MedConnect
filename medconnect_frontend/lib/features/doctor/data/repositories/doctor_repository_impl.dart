@@ -1,5 +1,6 @@
 
 
+import 'package:image_picker/image_picker.dart';
 import 'package:medconnect_frontend/features/doctor/data/datasources/doctor_remote_datasource.dart';
 import 'package:medconnect_frontend/features/doctor/data/models/doctor_model.dart';
 import 'package:medconnect_frontend/features/doctor/domain/repositories/doctor_repository.dart';
@@ -17,5 +18,14 @@ class DoctorProfileRepositoryImpl implements DoctorProfileRepository {
   @override
   Future<DoctorProfileModel> updateProfile(Map<String, dynamic> data) {
     return _remoteDataSource.updateProfile(data);
+  }
+  @override
+  Future<DoctorProfileModel> uploadProfileImage(XFile image) {
+    return _remoteDataSource.uploadProfileImage(image);
+  }
+
+  @override
+  Future<DoctorProfileModel> deleteProfileImage() {
+    return _remoteDataSource.deleteProfileImage();
   }
 }

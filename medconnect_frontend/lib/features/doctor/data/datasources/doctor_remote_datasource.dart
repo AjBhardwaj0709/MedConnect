@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:medconnect_frontend/core/constants/api_constants.dart';
 import 'package:medconnect_frontend/core/network/dio_client.dart';
 import 'package:medconnect_frontend/features/doctor/data/models/doctor_model.dart';
@@ -73,4 +75,47 @@ Future<DoctorProfileModel> getMyProfile() async {
 
     return DoctorProfileModel.fromJson(Map<String, dynamic>.from(doctor));
   }
+  // Upload or replace the logged-in doctor's profile image.
+  Future<DoctorProfileModel> uploadProfileImage(XFile image) async {
+    final bytes = await image.readAsBytes();
+
+    final formData = FormData.fromMap({
+      'image': MultipartFile.fromBytes(bytes, filename: image.name),
+    });
+
+    final response = await _client.dio.post(
+      '${ApiConstants.doctorProfile}/image',
+      data: formData,
+    );
+
+    final body = Map<String, dynamic>.from(response.data as Map);
+    final doctor = body['doctor'];
+
+    if (body['success'] != true || doctor is! Map) {
+      throw Exception(
+        body['message']?.toString() ?? 'Could not upload profile image.',
+      );
+    }
+
+    return DoctorProfileModel.fromJson(Map<String, dynamic>.from(doctor));
+  }
+
+  // Delete the logged-in doctor's profile image.
+  Future<DoctorProfileModel> deleteProfileImage() async {
+    final response = await _client.dio.delete(
+      '${ApiConstants.doctorProfile}/image',
+    );
+
+    final body = Map<String, dynamic>.from(response.data as Map);
+    final doctor = body['doctor'];
+
+    if (body['success'] != true || doctor is! Map) {
+      throw Exception(
+        body['message']?.toString() ?? 'Could not delete profile image.',
+      );
+    }
+
+    return DoctorProfileModel.fromJson(Map<String, dynamic>.from(doctor));
+  }
+  
 }

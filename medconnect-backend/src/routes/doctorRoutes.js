@@ -1,35 +1,51 @@
-const express= require("express");
+const express = require("express");
 
 const {
     getMyProfile,
     updateDoctorProfile,
     getAllDoctors,
     getDoctorById,
-}= require("../controllers/doctorController");
-const {
+    uploadDoctorProfileImage,
+    deleteDoctorProfileImage,
+} = require("../controllers/doctorController");
+
+const { protect, authorize } = require("../middleware/authMiddleware");
+const upload = require("../config/upload");
+
+const router = express.Router();
+
+// Existing routes
+router.get(
+    "/profile",
     protect,
-    authorize,
+    authorize("doctor"),
+    getMyProfile
+);
 
-}=require("../middleware/authMiddleware");
+router.put(
+    "/profile",
+    protect,
+    authorize("doctor"),
+    updateDoctorProfile
+);
 
-const router=express.Router();
+// Profile image routes
+router.post(
+    "/profile/image",
+    protect,
+    authorize("doctor"),
+    upload.single("image"),
+    uploadDoctorProfileImage
+);
 
-
-
-//doctor own profile
-router.get("/profile", protect,authorize("doctor"), getMyProfile);
-
-
-router.put("/profile", protect, authorize("doctor"), updateDoctorProfile);
-
-
-
-//doctor public list
+router.delete(
+    "/profile/image",
+    protect,
+    authorize("doctor"),
+    deleteDoctorProfileImage
+);
 
 router.get("/", getAllDoctors);
+router.get("/:id", getDoctorById);
 
-// single doctor by id
-router.get("/:id",getDoctorById);
-
-
-module.exports=router;
+module.exports = router;

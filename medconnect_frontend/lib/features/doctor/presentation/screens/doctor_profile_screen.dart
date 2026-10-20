@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:medconnect_frontend/app/theme/app_theme.dart';
 
 class DoctorProfileScreen extends StatefulWidget {
@@ -13,6 +14,9 @@ class DoctorProfileScreen extends StatefulWidget {
     this.initialConsultationFee = 0,
     this.initialAddress = '',
     this.verificationStatus = 'Pending',
+    this.initialProfileImage = '',
+    this.onUploadImage,
+    this.onDeleteImage,
     this.onSave,
   });
 
@@ -25,6 +29,11 @@ class DoctorProfileScreen extends StatefulWidget {
   final double initialConsultationFee;
   final String initialAddress;
   final String verificationStatus;
+  final String initialProfileImage;
+
+  final Future<String?> Function(XFile image)? onUploadImage;
+
+  final Future<void> Function()? onDeleteImage;
 
   final Future<void> Function(Map<String, dynamic> data)? onSave;
 
@@ -46,6 +55,8 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
 
   bool _isEditing = false;
   bool _isSaving = false;
+  String _profileImage = '';
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -65,6 +76,8 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
       text: widget.initialConsultationFee.toStringAsFixed(0),
     );
     _address = TextEditingController(text: widget.initialAddress);
+
+    _profileImage = widget.initialProfileImage;
   }
 
   @override
@@ -78,6 +91,103 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
     _fee.dispose();
     _address.dispose();
     super.dispose();
+  }
+
+  Future<void> _removeProfileImage() async {
+    if (_profileImage.isEmpty) {
+      _showMessage('No profile photo to remove.');
+      return;
+    }
+
+    if (widget.onDeleteImage == null) {
+      _showMessage('Profile image deletion is not connected.');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove profile photo?'),
+        content: const Text(
+          'Your current profile photo will be permanently removed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isUploadingImage = true);
+
+    try {
+      await widget.onDeleteImage!();
+
+      if (!mounted) return;
+
+      setState(() => _profileImage = '');
+      _showMessage('Profile photo removed successfully.');
+    } catch (error) {
+      if (mounted) {
+        _showMessage('Could not remove profile photo: $error');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
+  }
+
+  Future<void> _pickProfileImage() async {
+    try {
+      final picker = ImagePicker();
+
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1200,
+      );
+
+      if (image == null) return;
+
+      if (widget.onUploadImage == null) {
+        _showMessage('Profile image upload is not connected.');
+        return;
+      }
+
+      setState(() => _isUploadingImage = true);
+
+      // Receive the new URL returned after the upload.
+      final imageUrl = await widget.onUploadImage!(image);
+
+      if (!mounted) return;
+
+      if (imageUrl == null || imageUrl.isEmpty) {
+        throw Exception('Upload succeeded, but no image URL was returned.');
+      }
+
+      setState(() {
+        _profileImage = imageUrl;
+      });
+
+      _showMessage('Profile photo updated successfully.');
+    } catch (error) {
+      if (mounted) {
+        _showMessage('Could not upload profile photo: $error');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
   }
 
   String? _required(String? value, String label) {
@@ -165,7 +275,8 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final approved = widget.verificationStatus.toLowerCase() == 'approved';
-    debugPrint('DOCTOR PROFILE SCREEN BUILD CALLED');
+
+    debugPrint('PROFILE IMAGE URL: "$_profileImage"');
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -364,19 +475,129 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
       ),
       child: Column(
         children: [
-          Container(
-            width: 86,
-            height: 86,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white70, width: 2),
-            ),
-            child: const Icon(
-              Icons.person_rounded,
-              size: 48,
-              color: Colors.white,
-            ),
+          Stack(
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 3),
+                ),
+                child: ClipOval(
+                  child: _profileImage.isNotEmpty
+                      // ? Image.network(
+                      //     _profileImage,
+                      //     width: 100,
+                      //     height: 100,
+                      //     fit: BoxFit.cover,
+                      //     errorBuilder: (context, error, stackTrace) {
+                      //       return const ColoredBox(
+                      //         color: Color(0xFFE5EDF3),
+                      //         child: Icon(
+                      //           Icons.person_rounded,
+                      //           size: 52,
+                      //           color: Color(0xFF205B83),
+                      //         ),
+                      //       );
+                      //     },
+                      //   )
+                      ? Image.network(
+                          _profileImage,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) {
+                              debugPrint('PROFILE IMAGE LOADED SUCCESSFULLY');
+                              return child;
+                            }
+
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            debugPrint('PROFILE IMAGE LOAD ERROR: $error');
+
+                            return const ColoredBox(
+                              color: Color(0xFFE5EDF3),
+                              child: Icon(
+                                Icons.person_rounded,
+                                size: 52,
+                                color: Color(0xFF205B83),
+                              ),
+                            );
+                          },
+                        )
+                      : const ColoredBox(
+                          color: Color(0xFFE5EDF3),
+                          child: Icon(
+                            Icons.person_rounded,
+                            size: 52,
+                            color: Color(0xFF205B83),
+                          ),
+                        ),
+                ),
+              ),
+
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Material(
+                  color: Colors.white,
+                  shape: const CircleBorder(),
+                  child: PopupMenuButton<String>(
+                    tooltip: 'Profile photo options',
+                    enabled: !_isUploadingImage,
+                    icon: _isUploadingImage
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(
+                            Icons.camera_alt_rounded,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                    onSelected: (value) {
+                      if (value == 'upload') {
+                        _pickProfileImage();
+                      } else if (value == 'remove') {
+                        _removeProfileImage();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'upload',
+                        child: Row(
+                          children: [
+                            Icon(Icons.photo_library_outlined),
+                            SizedBox(width: 10),
+                            Text('Upload / Change photo'),
+                          ],
+                        ),
+                      ),
+                      if (_profileImage.isNotEmpty)
+                        const PopupMenuItem(
+                          value: 'remove',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete_outline, color: Colors.red),
+                              SizedBox(width: 10),
+                              Text(
+                                'Remove photo',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 14),
           Text(

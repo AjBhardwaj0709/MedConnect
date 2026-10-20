@@ -71,6 +71,24 @@ class DoctorProfileConnectedScreen extends ConsumerWidget {
           initialConsultationFee: profile.consultationFee,
           initialAddress: profile.clinicAddress,
           verificationStatus: profile.verificationStatus,
+          onUploadImage: (image) async {
+            final updatedProfile = await ref
+                .read(doctorProfileControllerProvider.notifier)
+                .uploadProfileImage(image);
+
+            debugPrint(
+              'UPDATED PROFILE IMAGE URL: ${updatedProfile.profileImage}',
+            );
+
+            return updatedProfile.profileImage;
+          },
+
+          onDeleteImage: () async {
+            await ref
+                .read(doctorProfileControllerProvider.notifier)
+                .deleteProfileImage();
+          },
+
           onSave: (data) async {
             debugPrint('PROFILE UPDATE: save button called');
             debugPrint('PROFILE UPDATE DATA: $data');
