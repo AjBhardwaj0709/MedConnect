@@ -13,13 +13,15 @@ class DoctorProfileConnectedScreen extends ConsumerWidget {
       return error.message;
     }
 
-    // DioClient wraps Dio errors in ApiException, but handle both shapes so
-    // the screen still displays a useful message if the error comes unwrapped.
+    // DioClient wraps Dio errors in ApiException, but handle both shapes
+    // so the screen displays a useful message if an error is unwrapped.
     if (error is Exception) {
       final message = error.toString();
+
       if (message.startsWith('Exception: ')) {
         return message.substring('Exception: '.length);
       }
+
       return message;
     }
 
@@ -33,6 +35,7 @@ class DoctorProfileConnectedScreen extends ConsumerWidget {
     return profileState.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
+
       error: (error, stackTrace) {
         final message = _errorMessage(error);
         final isForbidden = error is ApiException && error.statusCode == 403;
@@ -81,7 +84,9 @@ class DoctorProfileConnectedScreen extends ConsumerWidget {
           ),
         );
       },
+
       data: (profile) => DoctorProfileScreen(
+        // Existing profile fields
         initialName: profile.name,
         initialEmail: profile.email,
         initialSpecialization: profile.specialization,
@@ -89,20 +94,35 @@ class DoctorProfileConnectedScreen extends ConsumerWidget {
         initialRegistrationNumber: profile.registrationNumber,
         initialExperience: profile.experience,
         initialConsultationFee: profile.consultationFee,
+
+        // Clinic details
         initialAddress: profile.clinicAddress,
+        initialClinicName: profile.clinicName,
+
+        // Multiple languages
+        initialLanguages: profile.languages,
+
+        // Preserve verification and profile image functionality
         verificationStatus: profile.verificationStatus,
         initialProfileImage: profile.profileImage,
+
+        // Preserve existing image upload
         onUploadImage: (image) async {
           final updatedProfile = await ref
               .read(doctorProfileControllerProvider.notifier)
               .uploadProfileImage(image);
+
           return updatedProfile.profileImage;
         },
+
+        // Preserve existing image deletion
         onDeleteImage: () async {
           await ref
               .read(doctorProfileControllerProvider.notifier)
               .deleteProfileImage();
         },
+
+        // Save all editable profile fields
         onSave: (data) async {
           await ref
               .read(doctorProfileControllerProvider.notifier)
@@ -110,9 +130,14 @@ class DoctorProfileConnectedScreen extends ConsumerWidget {
                 'name': data['name'],
                 'specialization': data['specialization'],
                 'qualification': data['qualification'],
+                'registrationNumber': data['registrationNumber'],
                 'experience': data['experience'],
                 'consultationFee': data['consultationFee'],
-                'clinicAddress': data['address'],
+
+                // New clinic and language fields
+                'clinicName': data['clinicName'],
+                'clinicAddress': data['clinicAddress'],
+                'languages': data['languages'],
               });
         },
       ),

@@ -15,6 +15,8 @@ class DoctorProfileModel {
     this.profileImage = '',
     this.verificationStatus = 'pending',
     this.isVerified = false,
+    
+    
   });
 
   final String id;
@@ -33,12 +35,13 @@ class DoctorProfileModel {
   final String verificationStatus;
   final bool isVerified;
 
+
   factory DoctorProfileModel.fromJson(Map<String, dynamic> json) {
     final userJson = json['userId'] is Map
         ? Map<String, dynamic>.from(json['userId'] as Map)
         : <String, dynamic>{};
 
-    final rawLanguages = json['languages'];
+    
 
     return DoctorProfileModel(
       id: (json['_id'] ?? '').toString(),
@@ -50,9 +53,9 @@ class DoctorProfileModel {
       experience: _asInt(json['experience']),
       consultationFee: _asDouble(json['consultationFee']),
       bio: (json['bio'] ?? '').toString(),
-      languages: rawLanguages is List
-          ? rawLanguages.map((value) => value.toString()).toList()
-          : const [],
+     languages: (json['languages'] as List<dynamic>? ?? [])
+          .map((language) => language.toString())
+          .toList(),
       clinicName: (json['clinicName'] ?? '').toString(),
       clinicAddress: (json['clinicAddress'] ?? json['address'] ?? '')
           .toString(),

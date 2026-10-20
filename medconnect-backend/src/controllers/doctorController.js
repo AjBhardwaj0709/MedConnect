@@ -183,6 +183,7 @@ const updateDoctorProfile = async (req, res) => {
             name,
             specialization,
             qualification,
+            registrationNumber,
             experience,
             consultationFee,
             bio,
@@ -210,6 +211,9 @@ const updateDoctorProfile = async (req, res) => {
         if (qualification !== undefined) {
             doctor.qualification = qualification;
         }
+        if (registrationNumber !== undefined) {
+            doctor.registrationNumber = registrationNumber;
+        }
         if (experience !== undefined) {
             doctor.experience = experience;
         }
@@ -231,6 +235,8 @@ const updateDoctorProfile = async (req, res) => {
         if (profileImage !== undefined) {
             doctor.profileImage = profileImage;
         }
+        await doctor.save();
+
         const updatedDoctor = await Doctor.findById(doctor._id)
             .populate("userId", "email role");
 

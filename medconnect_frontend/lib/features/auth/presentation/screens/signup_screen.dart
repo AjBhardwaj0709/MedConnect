@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:medconnect_frontend/shared/specialization.dart';
 
 import '../providers/auth_providers.dart';
 import '../widgets/auth_button.dart';
@@ -446,12 +447,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                           if (_role == UserRole.doctor) ...[
                             const SizedBox(height: 17),
-                            AuthTextField(
-                              controller: _specialization,
-                              label: 'Medical specialization',
-                              hint: 'e.g. Cardiology',
-                              icon: Icons.medical_services_outlined,
-                              validator: (v) => _required(v, 'Specialization'),
+                            buildSpecializationField(
+                              specializationController: _specialization,
+                              isEditing: true,
                             ),
                             const SizedBox(height: 17),
                             AuthTextField(
