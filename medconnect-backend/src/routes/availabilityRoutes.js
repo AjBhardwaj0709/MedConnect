@@ -2,7 +2,7 @@ const express = require("express");
 
 const {
     createAvailability,
-    getMyAvailability,
+    getAvailability,
     updateAvailability,
     deleteAvailability,
 } = require("../controllers/availabilityController");
@@ -14,40 +14,11 @@ const {
 
 const router = express.Router();
 
+router.use(protect, authorize("doctor"));
 
-// All routes require doctor authentication
-router.use(
-    protect,
-    authorize("doctor")
-);
-
-
-// Create availability
-router.post(
-    "/",
-    createAvailability
-);
-
-
-// Get my availability
-router.get(
-    "/",
-    getMyAvailability
-);
-
-
-// Update availability
-router.put(
-    "/:id",
-    updateAvailability
-);
-
-
-// Delete availability
-router.delete(
-    "/:id",
-    deleteAvailability
-);
-
+router.post("/", createAvailability);
+router.get("/", getAvailability);
+router.put("/:id", updateAvailability);
+router.delete("/:id", deleteAvailability);
 
 module.exports = router;

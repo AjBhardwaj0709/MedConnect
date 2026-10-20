@@ -486,22 +486,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                 ),
                 child: ClipOval(
                   child: _profileImage.isNotEmpty
-                      // ? Image.network(
-                      //     _profileImage,
-                      //     width: 100,
-                      //     height: 100,
-                      //     fit: BoxFit.cover,
-                      //     errorBuilder: (context, error, stackTrace) {
-                      //       return const ColoredBox(
-                      //         color: Color(0xFFE5EDF3),
-                      //         child: Icon(
-                      //           Icons.person_rounded,
-                      //           size: 52,
-                      //           color: Color(0xFF205B83),
-                      //         ),
-                      //       );
-                      //     },
-                      //   )
+                    
                       ? Image.network(
                           _profileImage,
                           width: 100,

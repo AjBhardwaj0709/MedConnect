@@ -6,32 +6,32 @@ const doctorAvailabilitySchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Doctor",
             required: true,
+            index: true,
         },
 
-        dayOfWeek: {
-            type: String,
-            enum: [
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "saturday",
-                "sunday",
-            ],
+        // The date this period applies to, normalized to UTC midnight.
+        date: {
+            type: Date,
             required: true,
         },
 
         startTime: {
             type: String,
             required: true,
-            match: /^([01]\d|2[0-3]):([0-5]\d)$/,
+            match: /^([01]\d|2[0-3]):[0-5]\d$/,
         },
 
         endTime: {
             type: String,
             required: true,
-            match: /^([01]\d|2[0-3]):([0-5]\d)$/,
+            match: /^([01]\d|2[0-3]):[0-5]\d$/,
+        },
+
+        slotDuration: {
+            type: Number,
+            required: true,
+            enum: [15, 20, 30, 45, 60],
+            default: 30,
         },
 
         isAvailable: {
@@ -39,10 +39,10 @@ const doctorAvailabilitySchema = new mongoose.Schema(
             default: true,
         },
     },
-    {
-        timestamps: true,
-    }
+    { timestamps: true }
 );
+
+doctorAvailabilitySchema.index({ doctorId: 1, date: 1 });
 
 module.exports = mongoose.model(
     "DoctorAvailability",

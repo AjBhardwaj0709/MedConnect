@@ -5,7 +5,6 @@ import 'package:medconnect_frontend/features/doctor/data/models/doctor_model.dar
 import 'package:medconnect_frontend/features/doctor/data/repositories/doctor_repository_impl.dart';
 import 'package:medconnect_frontend/features/doctor/domain/repositories/doctor_repository.dart';
 
-
 import '../controllers/doctor_profile_controller.dart';
 
 final doctorProfileRemoteDataSourceProvider =
@@ -21,6 +20,9 @@ final doctorProfileRepositoryProvider = Provider<DoctorProfileRepository>((
   );
 });
 
+// Intentionally not autoDispose: the profile request/result stays cached while
+// navigating within the app instead of being re-created whenever the screen
+// briefly loses its listener.
 final doctorProfileControllerProvider =
     AsyncNotifierProvider<DoctorProfileController, DoctorProfileModel>(
       DoctorProfileController.new,
