@@ -3,18 +3,36 @@ import 'package:medconnect_frontend/features/auth/domain/entities/auth_user.dart
 import 'package:medconnect_frontend/features/auth/presentation/providers/auth_providers.dart';
 
 class AuthController extends AsyncNotifier<AuthUser?> {
-  @override
-  Future<AuthUser?> build() async => null;
+@override
+Future<AuthUser?> build() async {
+  final storage = ref.read(tokenStorageProvider);
+
+  if (!await storage.hasSession()) {
+    return null;
+  }
+
+  try {
+    return await ref
+        .read(authRepositoryProvider)
+        .getCurrentUser();
+  } catch (_) {
+    await storage.clearSession();
+    return null;
+  }
+}
+
   Future<AuthUser?> login({
     required String email,
     required String password,
   }) async {
     state = const AsyncLoading();
+
     try {
       final user = await ref.read(loginUseCaseProvider)(
         email: email,
         password: password,
       );
+
       state = AsyncData(user);
       return user;
     } catch (error, stackTrace) {
@@ -33,6 +51,7 @@ class AuthController extends AsyncNotifier<AuthUser?> {
 
   Future<AuthUser?> _signup(Future<AuthUser> Function() operation) async {
     state = const AsyncLoading();
+
     try {
       final user = await operation();
       state = AsyncData(user);
@@ -44,7 +63,10 @@ class AuthController extends AsyncNotifier<AuthUser?> {
   }
 
   Future<void> logout() async {
-    await ref.read(authRepositoryProvider).logout();
-    state = const AsyncData(null);
+    try {
+      await ref.read(authRepositoryProvider).logout();
+    } finally {
+      state = const AsyncData(null);
+    }
   }
 }

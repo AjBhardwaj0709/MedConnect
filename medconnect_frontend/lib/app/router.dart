@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:medconnect_frontend/core/storage/token_storage.dart';
 import 'package:medconnect_frontend/features/doctor/presentation/screens/doctor_notifications_screen.dart';
 
 import '../features/auth/presentation/screens/login_screen.dart';
@@ -13,9 +14,47 @@ import '../features/doctor/presentation/screens/doctor_prescriptions_screen.dart
 import '../features/doctor/presentation/screens/doctor_medical_reports_screen.dart';
 import '../features/doctor/presentation/screens/doctor_chat_screen.dart';
 
+
+final TokenStorage _tokenStorage = TokenStorage();
+
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
 
+  redirect: (context, state) async {
+    final location = state.matchedLocation;
+
+    final isLogin = location == '/login';
+    final isSignup = location == '/signup';
+    final isAuthPage = isLogin || isSignup;
+
+    final hasSession = await _tokenStorage.hasSession();
+    final role = await _tokenStorage.getRole();
+
+    // No saved session: protected routes must not be opened.
+    if (!hasSession) {
+      if (!isAuthPage) return '/login';
+      return null;
+    }
+
+    // Saved session: skip login/signup and open the correct dashboard.
+    if (isAuthPage) {
+      return role == 'doctor'
+          ? '/doctor/dashboard'
+          : '/patient/dashboard';
+    }
+
+    // Prevent patients from opening doctor screens.
+    if (location.startsWith('/doctor/') && role != 'doctor') {
+      return '/patient/dashboard';
+    }
+
+    // Prevent doctors from opening patient screens.
+    if (location.startsWith('/patient/') && role != 'patient') {
+      return '/doctor/dashboard';
+    }
+
+    return null;
+  },
   routes: [
     // =========================
     // AUTHENTICATION ROUTES

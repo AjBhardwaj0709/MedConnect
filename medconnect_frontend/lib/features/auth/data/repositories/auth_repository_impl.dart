@@ -5,6 +5,7 @@ import 'package:medconnect_frontend/features/auth/domain/repositories/auth_repos
 
 class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this._remote, this._tokenStorage);
+
   final AuthRemoteDataSource _remote;
   final TokenStorage _tokenStorage;
 
@@ -14,6 +15,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     final result = await _remote.login(email: email, password: password);
+
     return result.user;
   }
 
@@ -30,5 +32,18 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> logout() => _tokenStorage.clearToken();
+  Future<AuthUser?> getCurrentUser() async {
+    final token = await _tokenStorage.getToken();
+
+    if (token == null || token.trim().isEmpty) {
+      return null;
+    }
+
+    return _remote.getCurrentAuthUser();
+  }
+
+  @override
+  Future<void> logout() async {
+    await _tokenStorage.clearSession();
+  }
 }
