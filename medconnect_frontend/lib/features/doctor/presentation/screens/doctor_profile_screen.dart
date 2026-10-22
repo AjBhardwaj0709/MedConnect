@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:medconnect_frontend/app/theme/app_theme.dart';
+import 'package:medconnect_frontend/features/auth/presentation/providers/auth_providers.dart';
 import 'package:medconnect_frontend/shared/specialization.dart';
 
-class DoctorProfileScreen extends StatefulWidget {
+class DoctorProfileScreen extends ConsumerStatefulWidget {
   const DoctorProfileScreen({
     super.key,
     this.initialName = '',
@@ -41,10 +44,10 @@ class DoctorProfileScreen extends StatefulWidget {
   final Future<void> Function(Map<String, dynamic> data)? onSave;
 
   @override
-  State<DoctorProfileScreen> createState() => _DoctorProfileScreenState();
+  ConsumerState<DoctorProfileScreen> createState() => _DoctorProfileScreenState();
 }
 
-class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
+class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _name;
@@ -703,10 +706,97 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                     ),
                   ),
                 ),
+              const SizedBox(height: 26),
+              const Text(
+                'Account',
+                style: TextStyle(
+                  color: AppColors.textColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _actionTile(
+                icon: Icons.lock_outline_rounded,
+                title: 'Change Password',
+                onTap: () =>
+                    _showMessage('Password management will be connected soon.'),
+              ),
+              _actionTile(
+                icon: Icons.help_outline_rounded,
+                title: 'Help & Support',
+                onTap: () =>
+                    _showMessage('Help & Support will be available soon.'),
+              ),
+              _actionTile(
+                icon: Icons.logout_rounded,
+                title: 'Logout',
+                color: Colors.red,
+                onTap: () => _confirmLogout(context, ref),
+              ),
+              const SizedBox(height: 20),
+              const Center(
+                child: Text(
+                  'MedConnect • Your health, our priority',
+                  style: TextStyle(color: AppColors.muted, fontSize: 12),
+                ),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Logout?'),
+        content: const Text('Are you sure you want to log out of MedConnect?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await ref.read(authControllerProvider.notifier).logout();
+
+      if (context.mounted) {
+        context.go('/login');
+      }
+    } catch (error) {
+      if (context.mounted) {
+        _showMessage('Unable to log out. Please try again.');
+      }
+    }
+  }
+
+  static Widget _actionTile({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color color = AppColors.textColor,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      leading: Icon(icon, color: color),
+      title: Text(
+        title,
+        style: TextStyle(color: color, fontWeight: FontWeight.w600),
+      ),
+      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+      onTap: onTap,
     );
   }
 
