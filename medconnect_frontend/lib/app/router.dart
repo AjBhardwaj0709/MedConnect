@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medconnect_frontend/core/storage/token_storage.dart';
 import 'package:medconnect_frontend/features/doctor/presentation/screens/doctor_notifications_screen.dart';
+import 'package:medconnect_frontend/features/patient/presentation/screens/patient_dashboard_screen.dart';
 
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/signup_screen.dart';
@@ -141,6 +142,12 @@ GoRoute(
       name: 'doctorChat',
       builder: (context, state) => const DoctorChatScreen(),
     ),
+
+    GoRoute(
+  path: '/patient/dashboard',
+  name: 'patientDashboard',
+  builder: (context, state) => const PatientDashboardScreen(),
+),
   ],
 
   // =========================
