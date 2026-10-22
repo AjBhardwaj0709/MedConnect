@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medconnect_frontend/core/storage/token_storage.dart';
 import 'package:medconnect_frontend/features/doctor/presentation/screens/doctor_notifications_screen.dart';
+import 'package:medconnect_frontend/features/patient/presentation/screens/patient_appointments_screen.dart';
 import 'package:medconnect_frontend/features/patient/presentation/screens/patient_dashboard_screen.dart';
+import 'package:medconnect_frontend/features/patient/presentation/screens/patient_medical_reports_screen.dart';
+import 'package:medconnect_frontend/features/patient/presentation/screens/patient_profile_screen.dart';
 
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/signup_screen.dart';
@@ -148,6 +151,22 @@ GoRoute(
   name: 'patientDashboard',
   builder: (context, state) => const PatientDashboardScreen(),
 ),
+
+GoRoute(
+      path: '/patient/profile',
+      name: 'patientProfile',
+      builder: (context, state) => const PatientProfileScreen(),
+    ),
+    GoRoute(
+      path: '/patient/appointments',
+      name: 'patientAppointments',
+      builder: (context, state) => const PatientAppointmentsScreen(),
+    ),
+    GoRoute(
+      path: '/patient/medical-reports',
+      name: 'patientMedicalReports',
+      builder: (context, state) => const PatientMedicalReportsScreen(),
+    ),
   ],
 
   // =========================

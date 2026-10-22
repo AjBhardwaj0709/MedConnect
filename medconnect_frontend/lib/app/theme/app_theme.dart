@@ -5,4 +5,6 @@ class AppColors {
   static const Color ink = Color(0xFF17324D);
   static const Color muted = Color(0xFF74869A);
   static const Color background = Color(0xFFF5F9FC);
+  static const Color textColor = Color(0xFF172B4D);
+ 
 }

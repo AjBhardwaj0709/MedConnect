@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medconnect_frontend/app/theme/app_theme.dart';
 import 'package:medconnect_frontend/features/auth/presentation/providers/auth_providers.dart';
+import 'package:medconnect_frontend/features/patient/presentation/screens/patient_appointments_screen.dart';
+import 'package:medconnect_frontend/features/patient/presentation/screens/patient_medical_reports_screen.dart';
+import 'package:medconnect_frontend/features/patient/presentation/screens/patient_profile_screen.dart';
 
 class PatientDashboardScreen extends ConsumerStatefulWidget {
   const PatientDashboardScreen({super.key});
@@ -13,11 +17,6 @@ class PatientDashboardScreen extends ConsumerStatefulWidget {
 class _PatientDashboardScreenState
     extends ConsumerState<PatientDashboardScreen> {
   int _selectedIndex = 0;
-
-  static const Color primaryColor = Color(0xFF167D9A);
-  static const Color backgroundColor = Color(0xFFF5F8FC);
-  static const Color textColor = Color(0xFF172B4D);
-  static const Color secondaryTextColor = Color(0xFF7A8799);
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -46,33 +45,17 @@ class _PatientDashboardScreenState
         ? email.split('@').first
         : 'Patient';
 
-    // final titles = ['Home', 'Appointments', 'Medical Reports', 'My Profile'];
+    final screens = [
+      _buildHome(displayName),
+      const PatientAppointmentsScreen(),
+      const PatientMedicalReportsScreen(),
+      const PatientProfileScreen(),
+    ];
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: [
-            _buildHome(displayName),
-            _buildPlaceholder(
-              icon: Icons.calendar_month_rounded,
-              title: 'My Appointments',
-              subtitle:
-                  'Your upcoming and previous appointments will appear here.',
-            ),
-            _buildPlaceholder(
-              icon: Icons.folder_shared_rounded,
-              title: 'Medical Reports',
-              subtitle: 'Your medical reports will be available here.',
-            ),
-            _buildPlaceholder(
-              icon: Icons.person_rounded,
-              title: 'My Profile',
-              subtitle: 'Your personal and medical profile will appear here.',
-            ),
-          ],
-        ),
+        child: IndexedStack(index: _selectedIndex, children: screens),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -88,7 +71,7 @@ class _PatientDashboardScreenState
         child: NavigationBar(
           height: 70,
           backgroundColor: Colors.white,
-          indicatorColor: primaryColor.withValues(alpha: 0.12),
+          indicatorColor: AppColors.primary.withValues(alpha: 0.12),
           selectedIndex: _selectedIndex,
           onDestinationSelected: (index) {
             setState(() => _selectedIndex = index);
@@ -137,7 +120,7 @@ class _PatientDashboardScreenState
                         const Text(
                           'MEDCONNECT',
                           style: TextStyle(
-                            color: primaryColor,
+                            color: AppColors.primary,
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 2,
@@ -147,7 +130,7 @@ class _PatientDashboardScreenState
                         Text(
                           'Hello, $patientName 👋',
                           style: const TextStyle(
-                            color: textColor,
+                            color: AppColors.textColor,
                             fontSize: 25,
                             fontWeight: FontWeight.w800,
                           ),
@@ -156,7 +139,7 @@ class _PatientDashboardScreenState
                         const Text(
                           'How are you feeling today?',
                           style: TextStyle(
-                            color: secondaryTextColor,
+                            color: AppColors.muted,
                             fontSize: 14,
                           ),
                         ),
@@ -175,7 +158,7 @@ class _PatientDashboardScreenState
                       onPressed: () => _showComingSoon('Notifications'),
                       icon: const Icon(
                         Icons.notifications_none_rounded,
-                        color: textColor,
+                        color: AppColors.textColor,
                         size: 27,
                       ),
                     ),
@@ -203,16 +186,19 @@ class _PatientDashboardScreenState
                   decoration: InputDecoration(
                     hintText: 'Search doctors, specialties...',
                     hintStyle: const TextStyle(
-                      color: secondaryTextColor,
+                      color: AppColors.muted,
                       fontSize: 13,
                     ),
                     prefixIcon: const Icon(
                       Icons.search_rounded,
-                      color: primaryColor,
+                      color: AppColors.primary,
                     ),
                     suffixIcon: IconButton(
                       onPressed: () => _showComingSoon('Doctor search'),
-                      icon: const Icon(Icons.tune_rounded, color: primaryColor),
+                      icon: const Icon(
+                        Icons.tune_rounded,
+                        color: AppColors.primary,
+                      ),
                     ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 17),
@@ -229,7 +215,7 @@ class _PatientDashboardScreenState
                   const Text(
                     'Upcoming Appointment',
                     style: TextStyle(
-                      color: textColor,
+                      color: AppColors.textColor,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
@@ -241,7 +227,7 @@ class _PatientDashboardScreenState
                     child: const Text(
                       'See all',
                       style: TextStyle(
-                        color: primaryColor,
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -322,7 +308,7 @@ class _PatientDashboardScreenState
                         onPressed: () => _showComingSoon('Appointment booking'),
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.white,
-                          foregroundColor: primaryColor,
+                          foregroundColor: AppColors.primary,
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -344,7 +330,7 @@ class _PatientDashboardScreenState
               const Text(
                 'Quick Access',
                 style: TextStyle(
-                  color: textColor,
+                  color: AppColors.textColor,
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                 ),
@@ -415,7 +401,7 @@ class _PatientDashboardScreenState
               const Text(
                 'Health & Wellness',
                 style: TextStyle(
-                  color: textColor,
+                  color: AppColors.textColor,
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                 ),
@@ -445,7 +431,7 @@ class _PatientDashboardScreenState
                           Text(
                             'Your health matters',
                             style: TextStyle(
-                              color: textColor,
+                              color: AppColors.textColor,
                               fontWeight: FontWeight.w800,
                               fontSize: 15,
                             ),
@@ -455,7 +441,7 @@ class _PatientDashboardScreenState
                             'Stay hydrated, keep active, and schedule '
                             'routine checkups with your healthcare provider.',
                             style: TextStyle(
-                              color: secondaryTextColor,
+                              color: AppColors.muted,
                               fontSize: 13,
                               height: 1.6,
                             ),
@@ -512,7 +498,7 @@ class _PatientDashboardScreenState
               Text(
                 title,
                 style: const TextStyle(
-                  color: textColor,
+                  color: AppColors.textColor,
                   fontWeight: FontWeight.w800,
                   fontSize: 13,
                 ),
@@ -520,7 +506,7 @@ class _PatientDashboardScreenState
               const SizedBox(height: 5),
               Text(
                 subtitle,
-                style: const TextStyle(color: secondaryTextColor, fontSize: 11),
+                style: const TextStyle(color: AppColors.muted, fontSize: 11),
               ),
             ],
           ),
@@ -547,14 +533,14 @@ class _PatientDashboardScreenState
                 color: const Color(0xFFE4F4FA),
                 borderRadius: BorderRadius.circular(26),
               ),
-              child: Icon(icon, size: 42, color: primaryColor),
+              child: Icon(icon, size: 42, color: AppColors.primary),
             ),
             const SizedBox(height: 24),
             Text(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: textColor,
+                color: AppColors.textColor,
                 fontSize: 23,
                 fontWeight: FontWeight.w800,
               ),
@@ -564,7 +550,7 @@ class _PatientDashboardScreenState
               subtitle,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: secondaryTextColor,
+                color: AppColors.muted,
                 fontSize: 14,
                 height: 1.6,
               ),
